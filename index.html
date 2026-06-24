@@ -1123,6 +1123,14 @@
     function startDrag(e) {
       // Ignore non-left mouse buttons (left button = 0)
       if (e.button !== undefined && e.button !== 0) return;
+
+      // Two-finger touch → special animation, not drag
+      if (e.touches && e.touches.length >= 2) {
+        pet._twoFinger = true;
+        e.preventDefault();
+        return;
+      }
+
       e.preventDefault();
 
       const pos = getPointerPos(e);
@@ -1203,7 +1211,7 @@
     pet.addEventListener('touchend', e => {
       if (wasDragged) return;
       const now = Date.now();
-      if (now - lastTapTime < 1000) {
+      if (now - lastTapTime < 2000) {
         // Double-tap detected
         e.preventDefault();
         clearTimeout(pet._singleClickTimer);
