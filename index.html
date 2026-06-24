@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Maltese 桌宠</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      user-select: none;
+      background: transparent;
+    }
+
+    /* Desktop surface — simulates a desktop background */
+    #desktop {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at 30% 20%, #fce4e8 0%, #fdf0e6 30%, #f0e0f0 60%, #f8f0f5 100%);
+    }
+
+    /* Hint text */
+    #hint {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Noto Sans SC', sans-serif;
+      font-size: 13px;
+      color: rgba(100, 100, 120, 0.5);
+      letter-spacing: 2px;
+      pointer-events: none;
+      white-space: nowrap;
+      transition: opacity 1s ease;
+    }
+    #hint.hidden { opacity: 0; }
+
+    /* Heart burst container */
+    #heart-container {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 200;
+      overflow: hidden;
+    }
+    .heart {
+      position: absolute;
+      animation: heartFloat 1.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+      pointer-events: none;
+    }
+    .heart svg { width: 22px; height: 22px; }
+
+    @keyframes heartFloat {
+      0%   { opacity: 1; transform: translateY(0) scale(0.3) rotate(-10deg); }
+      20%  { opacity: 1; transform: translateY(-20px) scale(1.1) rotate(5deg); }
+      100% { opacity: 0; transform: translateY(-130px) scale(0.6) rotate(-20deg); }
+    }
+
+    /* Star burst */
+    .star {
+      position: absolute;
+      animation: starFloat 0.8s ease-out forwards;
+      pointer-events: none;
+    }
+    .star svg { width: 16px; height: 16px; }
+    @keyframes starFloat {
+      0%   { opacity: 1; transform: translateY(0) scale(0.5) rotate(0deg); }
+      100% { opacity: 0; transform: translateY(-80px) scale(0.8) rotate(30deg); }
+    }
+
+    /* Pet wrapper — the draggable widget */
+    #pet {
+      position: fixed;
+      cursor: grab;
+      z-index: 100;
+      image-rendering: pixelated;
+      image-rendering: -webkit-optimize-contrast;
+      /* Start position: bottom-right area */
+      left: calc(50% - 120px);
+      top: calc(50% - 120px);
+      width: 240px;
+      height: 240px;
+      transition: filter 0.3s ease;
+    }
+
+    #pet:active { cursor: grabbing; }
+    #pet:hover { filter: drop-shadow(0 0 12px rgba(200, 150, 255, 0.6)); }
+
+    #pet img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;
+    }
+
+    /* Walking/moving pet */
+    #pet.walking {
+      transition: left 2.5s cubic-bezier(0.4, 0, 0.2, 1),
+                  top 2.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Context menu */
+    #ctx-menu {
+      position: fixed;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(180, 140, 220, 0.3);
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(100, 60, 140, 0.18), 0 2px 8px rgba(0,0,0,0.08);
+      padding: 6px;
+      z-index: 300;
+      min-width: 180px;
+      display: none;
+      font-family: 'Noto Sans SC', sans-serif;
+      font-size: 14px;
+    }
+    #ctx-menu.show { display: block; animation: ctxFade 0.15s ease-out; }
+
+    @keyframes ctxFade {
+      from { opacity: 0; transform: scale(0.92) translateY(-4px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .ctx-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #4a3a5c;
+      transition: background 0.15s, color 0.15s;
+      font-weight: 400;
+    }
+    .ctx-item:hover {
+      background: rgba(160, 100, 220, 0.12);
+      color: #7c4dff;
+    }
+    .ctx-item svg { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.7; }
+    .ctx-divider {
+      height: 1px;
+      background: rgba(180, 140, 220, 0.15);
+      margin: 4px 10px;
+    }
+    .ctx-item.disabled { opacity: 0.35; pointer-events: none; }
+
+    /* Toast notifications */
+    #toast-container {
+      position: fixed;
+      bottom: 80px;
+      right: 40px;
+      z-index: 250;
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .toast {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(180, 140, 220, 0.25);
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-family: 'Noto Sans SC', sans-serif;
+      font-size: 13px;
+      color: #4a3a5c;
+      box-shadow: 0 4px 16px rgba(100, 60, 140, 0.12);
+      animation: toastIn 0.3s ease-out, toastOut 0.4s ease-in 2.6s forwards;
+      max-width: 240px;
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(20px) scale(0.9); }
+      to   { opacity: 1; transform: translateX(0) scale(1); }
+    }
+    @keyframes toastOut {
+      from { opacity: 1; transform: translateX(0); }
+      to   { opacity: 0; transform: translateX(20px); }
+    }
+
+    /* Reminder input overlay */
+    #remind-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.35);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 350;
+      opacity: 0;
+      pointer-events: none;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.2s ease;
+    }
+    #remind-overlay.show {
+      display: flex;
+      opacity: 1;
+      pointer-events: auto;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    #remind-panel {
+      background: rgba(255, 255, 255, 0.97);
+      border-radius: 16px;
+      padding: 24px;
+      width: 300px;
+      box-shadow: 0 16px 48px rgba(80, 40, 120, 0.2);
+      font-family: 'Noto Sans SC', sans-serif;
+    }
+    #remind-panel h3 {
+      font-size: 16px;
+      color: #4a3a5c;
+      margin-bottom: 16px;
+      font-weight: 500;
+    }
+    #remind-panel input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid rgba(180, 140, 220, 0.3);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: 'Noto Sans SC', sans-serif;
+      outline: none;
+      margin-bottom: 12px;
+      background: #faf8ff;
+      color: #4a3a5c;
+    }
+    #remind-panel input:focus { border-color: #7c4dff; }
+    #remind-panel .btns {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+    #remind-panel button {
+      padding: 8px 18px;
+      border-radius: 8px;
+      border: none;
+      font-size: 13px;
+      font-family: 'Noto Sans SC', sans-serif;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #remind-panel .btn-cancel {
+      background: #f0e8f8;
+      color: #7a6a9a;
+    }
+    #remind-panel .btn-cancel:hover { background: #e4d6f0; }
+    #remind-panel .btn-ok {
+      background: linear-gradient(135deg, #9c6fff, #7c4dff);
+      color: white;
+    }
+    #remind-panel .btn-ok:hover { background: linear-gradient(135deg, #b08aff, #9060ff); }
+
+    /* ============================================================
+       Love Letter — Apple-Style Scroll Experience
+    ============================================================ */
+
+    /* === Fixed atmosphere (Apple sticky-style background) === */
+    #book-wrapper {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+    }
+    #book-wrapper * { pointer-events: auto; }
+
+    .book-atmosphere {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      transition: background 1s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: background;
+    }
+
+    /* === Floating atmospheric particles === */
+    .particle-field {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0;
+      will-change: transform, opacity;
+      animation: particleFloat ease-in-out infinite;
+    }
+    @keyframes particleFloat {
+      0%   { transform: translateY(100vh) rotate(0deg) scale(0.6); opacity: 0; }
+      8%   { opacity: 0.25; }
+      45%  { opacity: 0.12; }
+      85%  { opacity: 0.2; }
+      100% { transform: translateY(-10vh) rotate(180deg) scale(0.4); opacity: 0; }
+    }
+
+    /* === Scroll container === */
+    .book {
+      position: relative;
+      z-index: 1;
+      height: 100vh;
+      overflow-y: scroll;
+      overflow-x: hidden;
+      scroll-snap-type: y mandatory;
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
+    }
+    .book::-webkit-scrollbar { display: none; }
+
+    /* === Page sections (full viewport) === */
+    .page {
+      height: 100vh;
+      scroll-snap-align: start;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    /* === Content card (floating above) === */
+    .page-inner {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 56px;
+      text-align: center;
+      font-family: 'ZCOOL KuaiLe', 'Noto Sans SC', cursive, sans-serif;
+      color: #4a3048;
+      max-width: 600px;
+      width: 100%;
+      opacity: 0;
+      transform: translateY(24px) scale(0.97);
+      transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1),
+                  transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+      background: rgba(255, 255, 255, 0.28);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 24px;
+      box-shadow:
+        0 2px 12px rgba(80, 30, 50, 0.04),
+        0 8px 32px rgba(80, 30, 50, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+    /* Apple-style: each section slides in from slightly different angle */
+    .page:nth-child(odd) .page-inner {
+      transform: translateY(28px) scale(0.96) translateX(-4px);
+    }
+    .page:nth-child(even) .page-inner {
+      transform: translateY(28px) scale(0.96) translateX(4px);
+    }
+    .page-inner.visible {
+      opacity: 1;
+      transform: translateY(0) scale(1) translateX(0);
+    }
+
+    /* === Typography === */
+    .page-title {
+      font-size: clamp(28px, 4.5vw, 44px);
+      font-weight: 500;
+      color: #6a3850;
+      margin-bottom: 10px;
+      letter-spacing: 8px;
+    }
+
+    .page-subtitle {
+      font-size: clamp(14px, 2vw, 18px);
+      color: #a07084;
+      letter-spacing: 4px;
+      font-weight: 400;
+    }
+
+    .page-body {
+      font-size: clamp(16px, 2.2vw, 22px);
+      line-height: 2.1;
+      color: #4a2a3e;
+      max-width: 480px;
+      font-weight: 400;
+      letter-spacing: 1px;
+    }
+    .page-body p {
+      margin-bottom: 1.1em;
+      text-indent: 2em;
+    }
+
+    .page-sign {
+      margin-top: 28px;
+      font-size: clamp(17px, 2.4vw, 24px);
+      color: #b07088;
+      letter-spacing: 3px;
+    }
+
+    .page-number {
+      position: absolute;
+      bottom: 24px;
+      right: 32px;
+      font-family: 'Noto Sans SC', sans-serif;
+      font-size: 12px;
+      color: rgba(120, 80, 100, 0.2);
+      letter-spacing: 2px;
+      z-index: 3;
+    }
+
+    .divider-heart {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 16px 0;
+      color: rgba(200, 130, 160, 0.3);
+      font-size: 13px;
+      width: 100%;
+      max-width: 200px;
+    }
+    .divider-heart::before,
+    .divider-heart::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(200, 130, 160, 0.2), transparent);
+    }
+
+    /* === Fixed UI: nav dots + progress bar === */
+    #page-nav {
+      position: fixed;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      z-index: 50;
+      pointer-events: none;
+    }
+    #page-nav .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(160, 100, 130, 0.15);
+      border: none;
+      cursor: pointer;
+      transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      pointer-events: auto;
+      padding: 0;
+    }
+    #page-nav .dot:hover {
+      background: rgba(160, 100, 130, 0.35);
+      transform: scale(1.4);
+    }
+    #page-nav .dot.active {
+      background: #b07088;
+      transform: scale(1);
+      box-shadow: 0 0 0 4px rgba(176, 112, 136, 0.12);
+    }
+
+    #progress-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #d4a0b0, #b07088);
+      z-index: 50;
+      transition: width 0.2s ease-out;
+      pointer-events: none;
+    }
+
+    /* === Scroll hint === */
+    #scroll-indicator {
+      position: fixed;
+      bottom: 36px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
+      transition: opacity 1s ease;
+    }
+    #scroll-indicator.hidden { opacity: 0; }
+    #scroll-indicator span {
+      font-family: 'Noto Sans SC', sans-serif;
+      font-size: 11px;
+      color: rgba(160, 120, 140, 0.5);
+      letter-spacing: 4px;
+    }
+    #scroll-indicator .mouse {
+      width: 18px;
+      height: 28px;
+      border: 1.5px solid rgba(160, 120, 140, 0.3);
+      border-radius: 9px;
+      position: relative;
+    }
+    #scroll-indicator .mouse::after {
+      content: '';
+      position: absolute;
+      top: 5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      height: 6px;
+      background: rgba(160, 120, 140, 0.4);
+      border-radius: 1px;
+      animation: scrollWheel 2s ease-in-out infinite;
+    }
+    @keyframes scrollWheel {
+      0%, 100% { transform: translateX(-50%) translateY(0); opacity: 1; }
+      50%      { transform: translateX(-50%) translateY(8px); opacity: 0.15; }
+    }
+
+    /* === Responsive === */
+    @media (max-width: 600px) {
+      .page-inner { padding: 32px 24px; border-radius: 16px; backdrop-filter: blur(8px); }
+      #page-nav { right: 12px; gap: 12px; }
+      #page-nav .dot { width: 5px; height: 5px; }
+      .page-number { right: 16px; bottom: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="desktop"></div>
+
+  <!-- Love Letter Book -->
+  <div id="book-wrapper">
+    <div class="book-atmosphere" id="bookAtmosphere"></div>
+    <div class="particle-field" id="particleField"></div>
+    <div class="book" id="book">
+
+      <!-- Page 1: Cover -->
+      <div class="page page-cover" data-page="0">
+        <div class="page-inner">
+          <div style="font-size:clamp(40px,6vw,60px);margin-bottom:14px;">💌</div>
+          <div class="page-title">致 亲爱的你</div>
+          <div class="divider-heart">♡ ♡ ♡</div>
+          <div class="page-subtitle">有一些话，想写给你听</div>
+        </div>
+      </div>
+
+      <!-- Page 2 -->
+      <div class="page" data-page="1">
+        <div class="page-inner">
+          <div class="page-body">
+            <p>遇见你，是我生命中最美好的意外。</p>
+            <p>就像春日里第一缕穿过窗棂的阳光，温暖而不刺眼。</p>
+            <p>你的出现，让我的世界变得柔软而明亮。</p>
+          </div>
+          <div class="page-number">1</div>
+        </div>
+      </div>
+
+      <!-- Page 3 -->
+      <div class="page" data-page="2">
+        <div class="page-inner">
+          <div class="page-body">
+            <p>记得第一次见到你的时候，那时我从未想过，有一个人可以如此自然地走进我的心里。</p>
+            <p>你的微笑，你的声音，你说话时微微歪头的模样——</p>
+            <p>一切都刚刚好，不多不少，恰好是我喜欢的模样。</p>
+          </div>
+          <div class="page-number">2</div>
+        </div>
+      </div>
+
+      <!-- Page 4 -->
+      <div class="page" data-page="3">
+        <div class="page-inner">
+          <div class="page-body">
+            <p>和你在一起的每一天，都是平凡却闪闪发光的日子。</p>
+            <p>一起看过的日落，一起走过的街道，一起分享的琐碎日常——</p>
+            <p>这些看似微不足道的瞬间，却是我最珍贵的宝藏。</p>
+          </div>
+          <div class="divider-heart">♡</div>
+          <div class="page-body" style="font-size:clamp(14px,1.8vw,18px);">
+            <p>因为有你在，平凡的日子也变得值得期待。</p>
+          </div>
+          <div class="page-number">3</div>
+        </div>
+      </div>
+
+      <!-- Page 5 -->
+      <div class="page" data-page="4">
+        <div class="page-inner">
+          <div class="page-body">
+            <p>想和你一起看遍四季的风景——</p>
+            <p>春天的樱花，夏天的海风，秋天的落叶，冬天的初雪。</p>
+            <p>想和你一起尝遍各种美食，走遍世界的角落。</p>
+            <p>只要有你在身边，去哪里都好。</p>
+          </div>
+          <div class="page-number">4</div>
+        </div>
+      </div>
+
+      <!-- Page 6 -->
+      <div class="page" data-page="5">
+        <div class="page-inner">
+          <div class="page-body">
+            <p>有时我会想，缘分真是奇妙的事情。</p>
+            <p>在茫茫人海中，我们相遇、相识、相知。</p>
+            <p>没有早一步，也没有晚一步，刚好遇见了你。</p>
+            <p>这大概就是命运最好的安排。</p>
+          </div>
+          <div class="divider-heart">♡ ♡</div>
+          <div class="page-number">5</div>
+        </div>
+      </div>
+
+      <!-- Page 7 -->
+      <div class="page" data-page="6">
+        <div class="page-inner">
+          <div class="page-body">
+            <p>谢谢你出现在我的生命里，</p>
+            <p>让我知道被爱是一件多么幸福的事情。</p>
+            <p>未来的路还很长，</p>
+            <p>但我愿意牵着你的手，一起走下去。</p>
+          </div>
+          <div class="page-sign">—— 永远爱你</div>
+          <div class="page-number">6</div>
+        </div>
+      </div>
+
+      <!-- Page 8: Back cover -->
+      <div class="page page-cover" data-page="7">
+        <div class="page-inner">
+          <div style="font-size:clamp(44px,6vw,64px);margin-bottom:16px;">❤️</div>
+          <div class="page-title" style="font-size:clamp(24px,3.5vw,36px);">I Love You</div>
+          <div class="divider-heart">♡ ♡ ♡ ♡ ♡</div>
+          <div class="page-subtitle">三千世界，我只取你一瓢</div>
+          <div class="page-sign" style="margin-top:32px;font-size:clamp(13px,1.6vw,16px);color:rgba(120,80,100,0.35);">
+            — The End —
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Page navigation dots -->
+  <div id="page-nav"></div>
+
+  <!-- Progress bar -->
+  <div id="progress-bar"></div>
+
+  <!-- Scroll indicator -->
+  <div id="scroll-indicator">
+    <div class="mouse"></div>
+    <span>滑动浏览</span>
+  </div>
+
+  <div id="heart-container"></div>
+
+  <!-- Pet widget -->
+  <div id="pet">
+    <img id="pet-img" src="gifs/come.gif" alt="Maltese" />
+  </div>
+
+  <div id="hint">单击 · 双击 · 右键菜单 · 拖拽移动</div>
+
+  <!-- Context menu -->
+  <div id="ctx-menu">
+    <div class="ctx-item" data-action="look">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z"/>
+      </svg>
+      打招呼
+    </div>
+    <div class="ctx-item" data-action="study">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+      </svg>
+      学习模式
+    </div>
+    <div class="ctx-item" data-action="music">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+      </svg>
+      听音乐
+    </div>
+    <div class="ctx-item" data-action="food">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>
+      </svg>
+      吃东西
+    </div>
+    <div class="ctx-divider"></div>
+    <div class="ctx-item" data-action="remind">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+      </svg>
+      设定提醒
+    </div>
+    <div class="ctx-item" data-action="memo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+      </svg>
+      备忘录
+    </div>
+    <div class="ctx-divider"></div>
+    <div class="ctx-item" data-action="random">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
+      </svg>
+      随机散步
+    </div>
+    <div class="ctx-divider"></div>
+    <div class="ctx-item" data-action="idle" style="color: #b0a0c8; font-size: 12px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+      </svg>
+      返回待机
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toast-container"></div>
+
+  <!-- Reminder overlay -->
+  <div id="remind-overlay">
+    <div id="remind-panel">
+      <h3>设定提醒</h3>
+      <input type="text" id="remind-input" placeholder="输入提醒内容..." />
+      <div class="btns">
+        <button class="btn-cancel" id="remind-cancel">取消</button>
+        <button class="btn-ok" id="remind-ok">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    //  GIF assets
+    // ============================================================
+    const GIFS = {
+      main:         'gifs/main.gif',
+      bye:          'gifs/bye.gif',
+      come:         'gifs/come.gif',
+      drag1:        'gifs/drag1.gif',
+      drag2:        'gifs/drag2.gif',
+      drag3:        'gifs/drag3.gif',
+      eatwhat:      'gifs/eatwhat.gif',
+      english:       'gifs/english.gif',
+      find:         'gifs/find.gif',
+      food:         'gifs/food.gif',
+      look:         'gifs/look.gif',
+      look2:        'gifs/look2.gif',
+      memo:         'gifs/memo.gif',
+      music:        'gifs/music.gif',
+      remind:       'gifs/remind.gif',
+      remindstatus: 'gifs/remindstatus.gif',
+      run:          'gifs/run.gif',
+      run2:         'gifs/run2.gif',
+      special:      'gifs/special.gif',
+      study:        'gifs/study.gif',
+      wait1:        'gifs/wait1.gif',
+      wait2:        'gifs/wait2.gif',
+      wait3:        'gifs/wait3.gif',
+      wait4:        'gifs/wait4.gif',
+      wait5:        'gifs/wait5.gif',
+    };
+
+    // Natural duration (ms) for each GIF — computed from actual GIF frame data
+    const GIF_DURATION = {};  // populated by computeGifDurations()
+    const GIF_DURATION_DEFAULTS = {
+      // fallback values used until real parsing completes
+      main: 400, come: 2000, bye: 6000,
+      drag1: 1200, drag2: 1500, drag3: 1500,
+      eatwhat: 3000, english: 4000, find: 3000, food: 3000,
+      look: 3500, look2: 5500,
+      memo: 3500, music: 3000,
+      remind: 2500, remindstatus: 2000,
+      run: 1500, run2: 1500,
+      special: 3500, study: 3000,
+      wait1: 3000, wait2: 4000, wait3: 2500, wait4: 2000, wait5: 4000,
+    };
+    Object.assign(GIF_DURATION, GIF_DURATION_DEFAULTS);
+
+    const WAIT_GIFS = ['wait1', 'wait2', 'wait3', 'wait4', 'wait5'];
+    const DRAG_GIFS = ['drag1', 'drag2', 'drag3'];
+
+    // Preload all GIFs & compute real one-loop durations
+    // Parse GIF binary to compute one-loop duration by following block structure
+    async function calcGifDuration(url) {
+      try {
+        const resp = await fetch(url);
+        const buf  = await resp.arrayBuffer();
+        const bytes = new Uint8Array(buf);
+        let i = 0;
+
+        // Skip header (6) + screen descriptor (7)
+        i += 13;
+        const gctFlags = bytes[10];
+        if (gctFlags & 0x80) i += 3 * (1 << ((gctFlags & 0x07) + 1));
+
+        let currentDelay = 100; // ms, default when no GCE
+        let total = 0;
+
+        while (i < bytes.length) {
+          const b = bytes[i];
+          if (b === 0x3B) break;                   // Trailer — end
+          if (b === 0x21) {
+            const label = bytes[i + 1];
+            i += 2;
+            if (label === 0xF9) {                  // Graphic Control Extension
+              const sz = bytes[i];
+              if (sz >= 4) currentDelay = (bytes[i + 2] | (bytes[i + 3] << 8)) * 10;
+              i += 1 + sz;
+              continue;
+            }
+            // Skip other extension sub-blocks
+            while (i < bytes.length) {
+              const sz = bytes[i];
+              if (sz === 0) { i++; break; }
+              i += 1 + sz;
+            }
+          } else if (b === 0x2C) {                 // Image Descriptor = frame
+            total += Math.max(currentDelay, 100);
+            i += 9;
+            if (bytes[i - 1] & 0x80) i += 3 * (1 << ((bytes[i - 1] & 0x07) + 1));
+            if (i < bytes.length) {
+              i += 1;                               // LZW min code size
+              while (i < bytes.length) {
+                const sz = bytes[i];
+                if (sz === 0) { i++; break; }
+                i += 1 + sz;
+              }
+            }
+          } else {
+            i++;
+          }
+        }
+        return total || 3000;
+      } catch {
+        return 0;
+      }
+    }
+
+    const durPromises = Object.entries(GIFS).map(async ([name, url]) => {
+      const img = new Image();
+      img.src = url;
+      const real = await calcGifDuration(url);
+      if (real > 0) GIF_DURATION[name] = real;
+    });
+    void Promise.all(durPromises).then(() => {
+      console.log('GIF durations computed', GIF_DURATION);
+    });
+
+    // ============================================================
+    //  DOM refs
+    // ============================================================
+    const pet      = document.getElementById('pet');
+    const petImg   = document.getElementById('pet-img');
+    const ctxMenu  = document.getElementById('ctx-menu');
+    const hContainer = document.getElementById('heart-container');
+    const toastContainer = document.getElementById('toast-container');
+    const hint     = document.getElementById('hint');
+    const remindOverlay = document.getElementById('remind-overlay');
+    const remindInput   = document.getElementById('remind-input');
+    const remindOk      = document.getElementById('remind-ok');
+    const remindCancel   = document.getElementById('remind-cancel');
+
+    // ============================================================
+    //  State
+    // ============================================================
+    let currentGif    = 'come';   // matches HTML img src
+    let isAnimating   = false;   // a timed gif is playing (timer active)
+    let stateTimer    = null;    // setTimeout for timed gif return
+    let idleTimer     = null;    // setTimeout for idle-wait random
+
+    // Drag state
+    let isDragging    = false;
+    let wasDragged    = false;   // became true once mouse actually moved > threshold
+    let dragStartX    = 0, dragStartY = 0;
+    let petStartX     = 0, petStartY  = 0;
+
+    // Walk state
+    let isWalking     = false;
+    let walkTimer     = null;
+
+    let hintHidden    = false;
+    let pendingRemind = null;
+    let hoverTimer    = null;
+
+    // ============================================================
+    //  Pet position helpers
+    // ============================================================
+    const PET_W = 240, PET_H = 240;
+
+    function getPetPos() {
+      return { x: pet.offsetLeft, y: pet.offsetTop };
+    }
+    function setPetPos(x, y) {
+      const maxX = window.innerWidth  - PET_W;
+      const maxY = window.innerHeight - PET_H;
+      x = Math.max(0, Math.min(x, maxX));
+      y = Math.max(0, Math.min(y, maxY));
+      pet.style.left = x + 'px';
+      pet.style.top  = y + 'px';
+    }
+
+    // ============================================================
+    //  Low-level GIF controls
+    // ============================================================
+
+    // Switch GIF immediately without timer management (for drag states)
+    function setGif(name) {
+      petImg.src = GIFS[name];
+      currentGif = name;
+    }
+
+    // Switch GIF with auto-return timer
+    function playGif(name, duration) {
+      // Clear any pending state timer
+      clearTimeout(stateTimer);
+      stateTimer = null;
+
+      petImg.src = GIFS[name];
+      currentGif = name;
+      const dur = duration || GIF_DURATION[name] || 3000;
+
+      isAnimating = true;
+      stateTimer = setTimeout(() => {
+        isAnimating = false;
+        stateTimer = null;
+        if (!isDragging && !isWalking) {
+          scheduleIdle();
+        }
+      }, dur);
+    }
+
+    // ============================================================
+    //  Idle system
+    // ============================================================
+    function scheduleIdle() {
+      clearTimeout(idleTimer);
+      const delay = 15000 + Math.random() * 10000;
+      idleTimer = setTimeout(() => {
+        if (!isDragging && !isWalking && !stateTimer) {
+          const w = WAIT_GIFS[Math.floor(Math.random() * WAIT_GIFS.length)];
+          playGif(w);
+        }
+      }, delay);
+    }
+
+    function cancelIdle() {
+      clearTimeout(idleTimer);
+      idleTimer = null;
+    }
+
+    // Cancel all ongoing animation timers
+    function cancelAllTimers() {
+      clearTimeout(stateTimer);
+      stateTimer = null;
+      clearTimeout(idleTimer);
+      idleTimer = null;
+      clearTimeout(walkTimer);
+      walkTimer = null;
+      clearTimeout(hoverTimer);
+      hoverTimer = null;
+      isAnimating = false;
+    }
+
+    // ============================================================
+    //  Effects — hearts & stars
+    // ============================================================
+    const heartSVG = `<svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09 1.09-1.28 2.76-2.09 4.5-2.09 3.08 0 5.5 2.42 5.5 5.5 0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#FF6B9D"/></svg>`;
+    const heart2SVG = `<svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09 1.09-1.28 2.76-2.09 4.5-2.09 3.08 0 5.5 2.42 5.5 5.5 0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#FFB3C6"/></svg>`;
+    const starSVG   = `<svg viewBox="0 0 24 24"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" fill="#FFD700"/></svg>`;
+
+    function spawnHearts(cx, cy) {
+      const count = 5 + Math.floor(Math.random() * 4);
+      for (let i = 0; i < count; i++) {
+        const d = document.createElement('div');
+        d.className = 'heart';
+        d.innerHTML = Math.random() > 0.5 ? heartSVG : heart2SVG;
+        const ox = (Math.random() - 0.5) * 100;
+        const oy = (Math.random() - 0.5) * 40;
+        d.style.left = (cx + ox - 11) + 'px';
+        d.style.top  = (cy + oy - 11) + 'px';
+        d.style.animationDelay = (i * 0.07 + Math.random() * 0.05) + 's';
+        d.style.animationDuration = (1.2 + Math.random() * 0.4) + 's';
+        hContainer.appendChild(d);
+        setTimeout(() => d.remove(), 1700);
+      }
+      for (let i = 0; i < 4; i++) {
+        const s = document.createElement('div');
+        s.className = 'star';
+        s.innerHTML = starSVG;
+        const angle = (i / 4) * Math.PI * 2 + Math.random() * 0.5;
+        const r = 30 + Math.random() * 30;
+        s.style.left = (cx + Math.cos(angle) * r - 8) + 'px';
+        s.style.top  = (cy + Math.sin(angle) * r - 8) + 'px';
+        s.style.animationDelay = (i * 0.05) + 's';
+        hContainer.appendChild(s);
+        setTimeout(() => s.remove(), 900);
+      }
+    }
+
+    // ============================================================
+    //  Toast notification
+    // ============================================================
+    function showToast(text, duration = 3000) {
+      const t = document.createElement('div');
+      t.className = 'toast';
+      t.textContent = text;
+      t.style.animationDuration = `0.3s ease-out, 0.4s ease-in ${(duration / 1000 - 0.4).toFixed(1)}s forwards`;
+      toastContainer.appendChild(t);
+      setTimeout(() => t.remove(), duration + 50);
+    }
+
+    // ============================================================
+    //  Random walk
+    // ============================================================
+    function randomWalk() {
+      if (isDragging) return;
+      const pos = getPetPos();
+      const destX = Math.random() * (window.innerWidth  - PET_W);
+      const destY = Math.random() * (window.innerHeight - PET_H);
+      const dist  = Math.hypot(destX - pos.x, destY - pos.y);
+      const dur   = Math.max(1.5, Math.min(4, dist / 120));
+
+      const goingRight = destX > pos.x;
+      setGif(goingRight ? 'run2' : 'run');   // run2=right, run=left (based on GIF naming)
+
+      pet.classList.add('walking');
+      isWalking = true;
+      setPetPos(destX, destY);
+
+      clearTimeout(walkTimer);
+      walkTimer = setTimeout(() => {
+        pet.classList.remove('walking');
+        isWalking = false;
+        playGif('main');
+        scheduleIdle();
+      }, dur * 1000 + 300);
+    }
+
+    // ============================================================
+    //  Context menu
+    // ============================================================
+    function showCtx(e) {
+      e.preventDefault();
+      ctxMenu.style.left = Math.min(e.clientX, window.innerWidth  - 200) + 'px';
+      ctxMenu.style.top  = Math.min(e.clientY, window.innerHeight - 300) + 'px';
+      ctxMenu.classList.add('show');
+    }
+    function hideCtx() { ctxMenu.classList.remove('show'); }
+
+    document.addEventListener('click', e => {
+      if (!ctxMenu.contains(e.target)) hideCtx();
+    });
+
+    // ============================================================
+    //  Reminder system
+    // ============================================================
+    function openRemindDialog() {
+      remindInput.value = '';
+      remindOverlay.classList.add('show');
+      setTimeout(() => remindInput.focus(), 50);
+    }
+    function closeRemindDialog() {
+      remindOverlay.classList.remove('show');
+    }
+    function setRemind(text, seconds) {
+      if (pendingRemind) clearTimeout(pendingRemind.timeout);
+      showToast(`提醒已设定: ${text}`);
+      const tid = setTimeout(() => {
+        showToast(`提醒: ${text}`, 5000);
+        playGif('remind', 2500);
+      }, seconds * 1000);
+      pendingRemind = { text, timeout: tid };
+      playGif('remindstatus');
+    }
+
+    // ============================================================
+    //  Context menu actions
+    // ============================================================
+    ctxMenu.querySelectorAll('.ctx-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const action = item.dataset.action;
+        hideCtx();
+        switch (action) {
+          case 'look':    playGif('look');  showToast('你好呀!');    break;
+          case 'study':   playGif('study'); showToast('学习中...');  break;
+          case 'music':   playGif('music'); showToast('♪ 听音乐 ~'); break;
+          case 'food':    playGif('food');  showToast('吃东西');     break;
+          case 'memo':    playGif('memo');  showToast('写个备忘录'); break;
+          case 'remind':  openRemindDialog(); break;
+          case 'random':  randomWalk();     showToast('出去散步~');  break;
+          case 'idle':    playGif('main');  scheduleIdle();          break;
+        }
+      });
+    });
+
+    // Reminder dialog
+    remindOk.addEventListener('click', () => {
+      const val = remindInput.value.trim();
+      if (!val) return;
+      closeRemindDialog();
+      setRemind(val, 30);
+    });
+    remindCancel.addEventListener('click', closeRemindDialog);
+    remindInput.addEventListener('keydown', e => { if (e.key === 'Enter') remindOk.click(); });
+    remindOverlay.addEventListener('click', e => { if (e.target === remindOverlay) closeRemindDialog(); });
+
+    // ============================================================
+    //  DRAG & DROP  —  Mouse + Touch unified
+    // ============================================================
+
+    function getPointerPos(e) {
+      const t = e.touches ? e.touches[0] : e;
+      return { x: t.clientX, y: t.clientY };
+    }
+
+    function startDrag(e) {
+      // Ignore non-left mouse buttons (left button = 0)
+      if (e.button !== undefined && e.button !== 0) return;
+      e.preventDefault();
+
+      const pos = getPointerPos(e);
+      const p   = getPetPos();
+      dragStartX = pos.x;
+      dragStartY = pos.y;
+      petStartX  = p.x;
+      petStartY  = p.y;
+
+      // Cancel all ongoing animations
+      cancelAllTimers();
+      pet.classList.remove('walking');
+      isWalking = false;
+
+      // Enter drag state — randomly pick one drag GIF
+      isDragging = true;
+      wasDragged = false;
+      setGif(DRAG_GIFS[Math.floor(Math.random() * DRAG_GIFS.length)]);
+    }
+
+    function moveDrag(e) {
+      if (!isDragging) return;
+      e.preventDefault();
+
+      const pos = getPointerPos(e);
+      const dx  = pos.x - dragStartX;
+      const dy  = pos.y - dragStartY;
+      const moved = Math.hypot(dx, dy);
+
+      // Threshold: 8px to distinguish click from drag
+      if (!wasDragged && moved > 8) {
+        wasDragged = true;
+
+        // Hide hint on first drag
+        if (!hintHidden) {
+          hint.classList.add('hidden');
+          hintHidden = true;
+        }
+      }
+
+      // Update position regardless (even before threshold to avoid jump)
+      setPetPos(petStartX + dx, petStartY + dy);
+    }
+
+    function endDrag(e) {
+      if (!isDragging) return;
+      isDragging = false;
+
+      if (wasDragged) {
+        // Real drag — return to idle, spawn hearts at drop point
+        const pos = e.changedTouches
+          ? { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY }
+          : { x: e.clientX, y: e.clientY };
+        spawnHearts(pos.x, pos.y);
+        playGif('main');
+        scheduleIdle();
+      } else {
+        // Didn't move — treat as potential click (handled by click event)
+        // Just return to idle
+        playGif('main');
+        scheduleIdle();
+      }
+    }
+
+    // --- Mouse events ---
+    pet.addEventListener('mousedown', startDrag);
+    document.addEventListener('mousemove', moveDrag);
+    document.addEventListener('mouseup', endDrag);
+
+    // --- Touch events ---
+    pet.addEventListener('touchstart', startDrag, { passive: false });
+    document.addEventListener('touchmove', moveDrag, { passive: false });
+    document.addEventListener('touchend', endDrag);
+    document.addEventListener('touchcancel', endDrag);
+
+    // --- Double-tap on mobile (touch devices don't fire dblclick) ---
+    let lastTapTime = 0;
+    pet.addEventListener('touchend', e => {
+      if (wasDragged) return;
+      const now = Date.now();
+      if (now - lastTapTime < 1000) {
+        // Double-tap detected
+        e.preventDefault();
+        clearTimeout(pet._singleClickTimer);
+        pet._doubleTapped = true;
+        setTimeout(() => { pet._doubleTapped = false; }, 500);
+        spawnHearts(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+        spawnHearts(e.changedTouches[0].clientX - 30, e.changedTouches[0].clientY - 20);
+        spawnHearts(e.changedTouches[0].clientX + 30, e.changedTouches[0].clientY - 10);
+        playGif('special');
+        lastTapTime = 0;
+      } else {
+        lastTapTime = now;
+      }
+    });
+
+    // ============================================================
+    //  Click / Double-click
+    // ============================================================
+
+    pet.addEventListener('click', e => {
+      // Ignore click if it was part of a drag
+      if (wasDragged) {
+        wasDragged = false;
+        return;
+      }
+      // Ignore if triggered right after a double-tap
+      if (pet._doubleTapped) {
+        pet._doubleTapped = false;
+        return;
+      }
+      // Single click (with debounce for double-click)
+      if (e.detail === 1) {
+        clearTimeout(pet._singleClickTimer);
+        pet._singleClickTimer = setTimeout(() => {
+          if (!hintHidden) {
+            hint.classList.add('hidden');
+            hintHidden = true;
+          }
+          spawnHearts(e.clientX, e.clientY);
+          // Give a small reaction if idle
+          if (!isAnimating && !isDragging && !isWalking) {
+            playGif('look');
+          }
+        }, 220);
+      }
+    });
+
+    pet.addEventListener('dblclick', e => {
+      clearTimeout(pet._singleClickTimer);
+      e.preventDefault();
+      spawnHearts(e.clientX, e.clientY);
+      spawnHearts(e.clientX - 30, e.clientY - 20);
+      spawnHearts(e.clientX + 30, e.clientY - 10);
+      playGif('special');
+    });
+
+    // Right-click → context menu
+    pet.addEventListener('contextmenu', showCtx);
+
+    // ============================================================
+    //  Hover — pet notices cursor (only when idle)
+    // ============================================================
+    pet.addEventListener('mouseenter', () => {
+      if (isDragging || isWalking || isAnimating) return;
+      clearTimeout(hoverTimer);
+      hoverTimer = setTimeout(() => {
+        if (!isDragging && !isWalking && !isAnimating) {
+          playGif('look');
+        }
+      }, 2000);
+    });
+    pet.addEventListener('mouseleave', () => {
+      clearTimeout(hoverTimer);
+    });
+
+    // ============================================================
+    //  Keyboard
+    // ============================================================
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        hideCtx();
+        closeRemindDialog();
+      }
+    });
+
+    // ============================================================
+    //  Resize — clamp position
+    // ============================================================
+    window.addEventListener('resize', () => {
+      const pos = getPetPos();
+      setPetPos(pos.x, pos.y);
+    });
+
+    // ============================================================
+    //  Love Letter — Apple-Style Scroll Experience
+    // ============================================================
+    const book         = document.getElementById('book');
+    const pages        = [...book.querySelectorAll('.page')];
+    const navDots      = document.getElementById('page-nav');
+    const progress     = document.getElementById('progress-bar');
+    const scrollInd    = document.getElementById('scroll-indicator');
+    const atmosphere   = document.getElementById('bookAtmosphere');
+    const particleEl   = document.getElementById('particleField');
+    const TOTAL        = pages.length;
+
+    let currPage = 0;
+
+    /* ─── Apple-style atmospheric gradients (one per page) ─── */
+    const GRADIENTS = [
+      'linear-gradient(160deg, #f5e4dc 0%, #f0d8d0 25%, #f8ece4 50%, #ede0d8 75%, #f5e4dc 100%)',
+      'linear-gradient(160deg, #fcf6ee 0%, #faf0e6 30%, #f5eee8 60%, #f8f0ea 100%)',
+      'linear-gradient(160deg, #faf0ea 0%, #f8ece4 30%, #f4e8e0 60%, #fceee6 100%)',
+      'linear-gradient(160deg, #fcf2ec 0%, #fae8e0 30%, #f5e4dc 60%, #f8ece4 100%)',
+      'linear-gradient(160deg, #f8ece8 0%, #f0e0dc 30%, #ecdcd8 60%, #f4e4e0 100%)',
+      'linear-gradient(160deg, #faf0f0 0%, #f4e4e4 30%, #eedede 60%, #f6e8e8 100%)',
+      'linear-gradient(160deg, #fcf4ec 0%, #faece4 30%, #f5e6de 60%, #fcf0e8 100%)',
+      'linear-gradient(160deg, #f5e4dc 0%, #f0d8d0 25%, #f8ece4 50%, #ede0d8 75%, #f5e4dc 100%)',
+    ];
+
+    /* ─── Floating particle field ─── */
+    function createParticles() {
+      const symbols = ['♡', '💕', '✦', '·'];
+      for (let i = 0; i < 14; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.textContent = symbols[i % symbols.length];
+        p.style.left = (5 + Math.random() * 90) + '%';
+        p.style.fontSize = (8 + Math.random() * 10) + 'px';
+        p.style.animationDuration = (12 + Math.random() * 16) + 's';
+        p.style.animationDelay = (Math.random() * 14) + 's';
+        p.style.color = `rgba(160, 100, 130, ${0.08 + Math.random() * 0.12})`;
+        particleEl.appendChild(p);
+      }
+    }
+    createParticles();
+
+    /* ─── IntersectionObserver for card fade-in ─── */
+    const fadeObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+    pages.forEach(p => fadeObserver.observe(p.querySelector('.page-inner')));
+
+    // Build navigation dots
+    pages.forEach((_, i) => {
+      const dot = document.createElement('button');
+      dot.className = 'dot' + (i === 0 ? ' active' : '');
+      dot.setAttribute('aria-label', `第 ${i + 1} 页`);
+      dot.addEventListener('click', () => {
+        pages[i].scrollIntoView({ behavior: 'smooth' });
+      });
+      navDots.appendChild(dot);
+    });
+
+    function updateActivePage() {
+      const scrollTop = book.scrollTop;
+      const viewH = book.clientHeight;
+      const idx = Math.round(scrollTop / viewH);
+      const clamped = Math.max(0, Math.min(idx, TOTAL - 1));
+
+      if (clamped !== currPage) {
+        currPage = clamped;
+        // Update nav dots
+        const dots = navDots.querySelectorAll('.dot');
+        dots.forEach((d, i) => d.classList.toggle('active', i === currPage));
+        // Apple-style: transition background atmosphere
+        atmosphere.style.background = GRADIENTS[currPage];
+      }
+
+      // Update progress bar
+      const pct = (scrollTop / (book.scrollHeight - viewH)) * 100;
+      progress.style.width = Math.min(pct, 100) + '%';
+
+      // Hide scroll indicator when scrolled past first page
+      if (scrollTop > viewH * 0.3) {
+        scrollInd.classList.add('hidden');
+      } else {
+        scrollInd.classList.remove('hidden');
+      }
+    }
+
+    // Throttled scroll handler
+    let scrollTick = false;
+    book.addEventListener('scroll', () => {
+      if (!scrollTick) {
+        requestAnimationFrame(() => {
+          updateActivePage();
+          scrollTick = false;
+        });
+        scrollTick = true;
+      }
+    });
+
+    // Click on book → go to next page
+    book.addEventListener('click', e => {
+      if (e.target.closest('#pet')) return;
+      if (currPage < TOTAL - 1) {
+        pages[currPage + 1].scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+
+    // Key support
+    document.addEventListener('keydown', e => {
+      if (e.target.closest('#remind-overlay') || e.target.closest('#ctx-menu')) return;
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') {
+        e.preventDefault();
+        if (currPage < TOTAL - 1) pages[currPage + 1].scrollIntoView({ behavior: 'smooth' });
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        if (currPage > 0) pages[currPage - 1].scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+
+    // Init
+    atmosphere.style.background = GRADIENTS[0];
+    setTimeout(updateActivePage, 100);
+
+    // ============================================================
+    //  Boot — come.gif already playing from HTML src, just wait for
+    //  its first loop to finish, then switch to main idle
+    // ============================================================
+    setTimeout(() => {
+      playGif('main');
+      scheduleIdle();
+    }, GIF_DURATION.come);
+  </script>
+</body>
+</html>
