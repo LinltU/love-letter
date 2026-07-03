@@ -617,6 +617,62 @@
       #page-nav .dot { width: 5px; height: 5px; }
       .page-number { right: 16px; bottom: 16px; }
     }
+
+    @media (max-width: 430px) and (max-aspect-ratio: 16/9) {
+      #pet {
+        width: 208px;
+        height: 208px;
+        left: calc(50% - 104px);
+        top: calc(50% - 118px);
+      }
+
+      .page-bg {
+        background-size: auto 92%;
+        background-position: center 42%;
+      }
+
+      .page-inner {
+        padding: 42px 20px 56px;
+      }
+
+      .page-cover .page-inner {
+        width: calc(100% - 32px);
+        padding: 28px 20px;
+      }
+
+      .page-title {
+        font-size: clamp(24px, 7vw, 30px);
+        letter-spacing: 4px;
+        margin-bottom: 4px;
+      }
+
+      .page-subtitle {
+        font-size: clamp(12px, 3.5vw, 14px);
+        letter-spacing: 3px;
+        margin-bottom: 14px;
+      }
+
+      .page-body {
+        font-size: clamp(14px, 4vw, 17px);
+        line-height: 1.95;
+      }
+
+      .page-sign {
+        margin-top: 18px;
+        font-size: clamp(15px, 4vw, 18px);
+        letter-spacing: 2px;
+      }
+
+      .divider-heart {
+        margin: 10px 0;
+        max-width: 132px;
+      }
+
+      .page-number {
+        font-size: 10px;
+        padding: 4px 10px;
+      }
+    }
   </style>
 </head>
 <body>
