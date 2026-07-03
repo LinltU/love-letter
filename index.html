@@ -73,6 +73,11 @@
       100% { opacity: 0; transform: translateY(-80px) scale(0.8) rotate(30deg); }
     }
 
+    @keyframes lineReveal {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
     /* Pet wrapper — the draggable widget */
     #pet {
       position: fixed;
@@ -323,110 +328,159 @@
       align-items: center;
       justify-content: center;
       position: relative;
+      overflow: hidden;
     }
 
-    /* === Content card (floating above) === */
+    /* === Page background image === */
+    .page-bg {
+      position: absolute;
+      inset: 0;
+      background-size: auto 100%;
+      background-position: center;
+      background-repeat: no-repeat;
+      z-index: 0;
+    }
+
+    /* === Content card (bottom-aligned with gradient) === */
     .page-inner {
-      position: relative;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
       z-index: 2;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 48px 56px;
+      justify-content: flex-end;
+      padding: 60px 32px 40px;
       text-align: center;
       font-family: 'ZCOOL KuaiLe', 'Noto Sans SC', cursive, sans-serif;
-      color: #4a3048;
-      max-width: 600px;
+      color: #fff;
+      max-width: 100%;
       width: 100%;
       opacity: 0;
-      transform: translateY(24px) scale(0.97);
-      transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1),
-                  transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
-      background: rgba(255, 255, 255, 0.28);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-radius: 24px;
-      box-shadow:
-        0 2px 12px rgba(80, 30, 50, 0.04),
-        0 8px 32px rgba(80, 30, 50, 0.06),
-        inset 0 1px 0 rgba(255, 255, 255, 0.5);
-    }
-    /* Apple-style: each section slides in from slightly different angle */
-    .page:nth-child(odd) .page-inner {
-      transform: translateY(28px) scale(0.96) translateX(-4px);
-    }
-    .page:nth-child(even) .page-inner {
-      transform: translateY(28px) scale(0.96) translateX(4px);
+      transform: translateY(30px);
+      transition: opacity 1s cubic-bezier(0.22, 1, 0.36, 1),
+                  transform 1s cubic-bezier(0.22, 1, 0.36, 1);
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.3) 50%, rgba(0, 0, 0, 0.1) 70%, transparent 100%);
+      border: none;
+      border-radius: 0;
     }
     .page-inner.visible {
       opacity: 1;
-      transform: translateY(0) scale(1) translateX(0);
+      transform: translateY(0);
     }
 
     /* === Typography === */
     .page-title {
       font-size: clamp(28px, 4.5vw, 44px);
       font-weight: 500;
-      color: #6a3850;
-      margin-bottom: 10px;
+      color: #fff;
+      margin-bottom: 6px;
       letter-spacing: 8px;
+      text-shadow: 0 0 12px rgba(0, 0, 0, 0.7), 0 2px 6px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
+      opacity: 0;
+    }
+    .page-inner.visible .page-title {
+      animation: lineReveal 0.8s ease forwards;
+      animation-delay: 0.1s;
     }
 
     .page-subtitle {
-      font-size: clamp(14px, 2vw, 18px);
-      color: #a07084;
-      letter-spacing: 4px;
+      font-size: clamp(13px, 1.8vw, 17px);
+      color: rgba(255, 255, 255, 0.9);
+      letter-spacing: 5px;
       font-weight: 400;
+      margin-bottom: 20px;
+      text-shadow: 0 0 8px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
+      opacity: 0;
+    }
+    .page-inner.visible .page-subtitle {
+      animation: lineReveal 0.6s ease forwards;
+      animation-delay: 0.25s;
     }
 
     .page-body {
-      font-size: clamp(16px, 2.2vw, 22px);
-      line-height: 2.1;
-      color: #4a2a3e;
-      max-width: 480px;
+      font-size: clamp(15px, 2.2vw, 21px);
+      line-height: 2.2;
+      color: rgba(255, 255, 255, 0.95);
+      max-width: 1000px;
       font-weight: 400;
       letter-spacing: 1px;
+      text-shadow: 0 0 10px rgba(0, 0, 0, 0.6), 0 1px 4px rgba(0, 0, 0, 0.4);
     }
     .page-body p {
-      margin-bottom: 1.1em;
-      text-indent: 2em;
+      margin-bottom: 0.8em;
+      text-indent: 0;
+      opacity: 0;
     }
+    .page-inner.visible .page-body p {
+      animation: lineReveal 0.7s ease forwards;
+    }
+    .page-inner.visible .page-body p:nth-child(1) { animation-delay: 0.3s; }
+    .page-inner.visible .page-body p:nth-child(2) { animation-delay: 0.5s; }
+    .page-inner.visible .page-body p:nth-child(3) { animation-delay: 0.7s; }
+    .page-inner.visible .page-body p:nth-child(4) { animation-delay: 0.9s; }
+    .page-inner.visible .page-body p:nth-child(5) { animation-delay: 1.1s; }
 
     .page-sign {
-      margin-top: 28px;
+      margin-top: 24px;
       font-size: clamp(17px, 2.4vw, 24px);
-      color: #b07088;
-      letter-spacing: 3px;
+      color: rgba(255, 255, 255, 0.9);
+      letter-spacing: 4px;
+      font-weight: 500;
+      text-shadow: 0 0 10px rgba(0, 0, 0, 0.5), 0 1px 4px rgba(0, 0, 0, 0.3);
+      opacity: 0;
+    }
+    .page-inner.visible .page-sign {
+      animation: lineReveal 0.8s ease forwards;
+      animation-delay: 1.3s;
     }
 
     .page-number {
       position: absolute;
-      bottom: 24px;
-      right: 32px;
+      bottom: 20px;
+      right: 24px;
       font-family: 'Noto Sans SC', sans-serif;
-      font-size: 12px;
-      color: rgba(120, 80, 100, 0.2);
-      letter-spacing: 2px;
+      font-size: 11px;
+      color: rgba(100, 60, 80, 0.25);
+      letter-spacing: 3px;
       z-index: 3;
+      background: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(8px);
+      padding: 5px 12px;
+      border-radius: 10px;
     }
 
     .divider-heart {
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin: 16px 0;
-      color: rgba(200, 130, 160, 0.3);
-      font-size: 13px;
+      gap: 8px;
+      margin: 12px 0;
+      color: rgba(180, 100, 140, 0.35);
+      font-size: 11px;
       width: 100%;
-      max-width: 200px;
+      max-width: 160px;
     }
     .divider-heart::before,
     .divider-heart::after {
       content: '';
       flex: 1;
       height: 1px;
-      background: linear-gradient(to right, transparent, rgba(200, 130, 160, 0.2), transparent);
+      background: linear-gradient(to right, transparent, rgba(180, 100, 140, 0.25), transparent);
+    }
+
+    /* === Decorative corner elements === */
+    .page-corner {
+      position: absolute;
+      z-index: 2;
+      opacity: 0;
+      transition: opacity 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .page-corner.top-left { top: 24px; left: 24px; }
+    .page-corner.top-right { top: 24px; right: 24px; }
+    .page-inner.visible + .page-corner {
+      opacity: 0.5;
     }
 
     /* === Fixed UI: nav dots + progress bar === */
@@ -518,9 +572,47 @@
       50%      { transform: translateX(-50%) translateY(8px); opacity: 0.15; }
     }
 
+    /* === Cover page styles (light background, centered) === */
+    .page-cover .page-inner {
+      position: relative;
+      bottom: auto;
+      left: auto;
+      right: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 40px;
+      max-width: 580px;
+      width: 90%;
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      border-radius: 28px;
+    }
+    .page-cover .page-title {
+      color: #5a2a40;
+      text-shadow: 0 2px 8px rgba(255, 255, 255, 0.9);
+    }
+    .page-cover .page-subtitle {
+      color: #8a5068;
+      text-shadow: none;
+    }
+    .page-cover .page-body,
+    .page-cover .page-body p {
+      color: #4a2a3e;
+      text-shadow: none;
+    }
+    .page-cover .page-sign {
+      color: #a06078;
+      text-shadow: none;
+    }
+
     /* === Responsive === */
     @media (max-width: 600px) {
-      .page-inner { padding: 32px 24px; border-radius: 16px; backdrop-filter: blur(8px); }
+      .page-inner { padding: 50px 24px 36px; }
+      .page-cover .page-inner { padding: 32px 24px; }
       #page-nav { right: 12px; gap: 12px; }
       #page-nav .dot { width: 5px; height: 5px; }
       .page-number { right: 16px; bottom: 16px; }
@@ -540,90 +632,112 @@
       <!-- Page 1: Cover -->
       <div class="page page-cover" data-page="0">
         <div class="page-inner">
-          <div style="font-size:clamp(40px,6vw,60px);margin-bottom:14px;">💌</div>
-          <div class="page-title">致 亲爱的你</div>
-          <div class="divider-heart">♡ ♡ ♡</div>
-          <div class="page-subtitle">有一些话，想写给你听</div>
+          <div style="font-size:clamp(40px,6vw,60px);margin-bottom:16px;">💌</div>
+          <div class="page-title">致 亲爱的福福</div>
+          <div class="divider-heart">♡ ♡ ♡ ♡ ♡ ♡</div>
+          <div class="page-subtitle">一周年快乐</div>
+          <div class="page-sign" style="margin-top:24px;">—— Linltu</div>
         </div>
       </div>
 
-      <!-- Page 2 -->
+      <!-- Page 2: 合照 -->
       <div class="page" data-page="1">
+        <div class="page-bg" style="background-image: url('pic/1.png');"></div>
+        
         <div class="page-inner">
+          <div class="page-title">我们的故事</div>
+          <div class="divider-heart">♡</div>
           <div class="page-body">
-            <p>遇见你，是我生命中最美好的意外。</p>
-            <p>就像春日里第一缕穿过窗棂的阳光，温暖而不刺眼。</p>
-            <p>你的出现，让我的世界变得柔软而明亮。</p>
+            <p>亲爱的福福，转眼我们的第一年就这样悄悄溜走，</p>
+            <p>这一年里，我们一起看过周深温柔而治愈的演唱会，荧光棒挥舞的瞬间，我觉得整个世界都在发光。</p>
+            <p>一起去中山植物园看绣球花海，你笑得比花还美，我想把那一刻永远珍藏。</p>
           </div>
           <div class="page-number">1</div>
         </div>
       </div>
 
-      <!-- Page 3 -->
+      <!-- Page 3: 演唱会与花 -->
       <div class="page" data-page="2">
+        <div class="page-bg" style="background-image: url('pic/2.jpeg');"></div>
+        
         <div class="page-inner">
+          <div class="page-title">一起走过的路</div>
+          <div class="divider-heart">♡ ♡</div>
           <div class="page-body">
-            <p>记得第一次见到你的时候，那时我从未想过，有一个人可以如此自然地走进我的心里。</p>
-            <p>你的微笑，你的声音，你说话时微微歪头的模样——</p>
-            <p>一切都刚刚好，不多不少，恰好是我喜欢的模样。</p>
+            <p>我们一起去过浙江台州，吃遍街头巷尾的小吃，你嘴里塞得满满的像只小仓鼠，可爱极了。</p>
+            <p>欢乐谷的过山车我尖叫得比你还大声，摩天轮升到最高处时偷偷亲了你一下。</p>
+            <p>水上乐园的浪花拍打着我们，笑声在水面上飘得好远好远。</p>
           </div>
           <div class="page-number">2</div>
         </div>
       </div>
 
-      <!-- Page 4 -->
+      <!-- Page 4: 吃喝玩乐 -->
       <div class="page" data-page="3">
+        <div class="page-bg" style="background-image: url('pic/3.jpeg');"></div>
+        
         <div class="page-inner">
+          <div class="page-title">柴米油盐</div>
+          <div class="divider-heart">♡ ♡ ♡</div>
           <div class="page-body">
-            <p>和你在一起的每一天，都是平凡却闪闪发光的日子。</p>
-            <p>一起看过的日落，一起走过的街道，一起分享的琐碎日常——</p>
-            <p>这些看似微不足道的瞬间，却是我最珍贵的宝藏。</p>
-          </div>
-          <div class="divider-heart">♡</div>
-          <div class="page-body" style="font-size:clamp(14px,1.8vw,18px);">
-            <p>因为有你在，平凡的日子也变得值得期待。</p>
+            <p>我们一起爬过栖霞山，逛过玄武湖，逛街买漂亮的衣服，</p>
+            <p>晚上遛弯的时候牵着手，骑电动车逛夜市，买各种好吃的，</p>
+            <p>一起跨年时倒计时的拥抱，一起窝在沙发上玩胡闹厨房Steam游戏气得你直跺脚，</p>
+            <p>这些平凡得不能再平凡的日子，因为有你，变得闪闪发光。</p>
           </div>
           <div class="page-number">3</div>
         </div>
       </div>
 
-      <!-- Page 5 -->
+      <!-- Page 5: 游乐园与散步 -->
       <div class="page" data-page="4">
+        <div class="page-bg" style="background-image: url('pic/4.jpeg');"></div>
+        
         <div class="page-inner">
+          <div class="page-title">为你戴上星星</div>
+          <div class="divider-heart">♡ ♡ ♡ ♡</div>
           <div class="page-body">
-            <p>想和你一起看遍四季的风景——</p>
-            <p>春天的樱花，夏天的海风，秋天的落叶，冬天的初雪。</p>
-            <p>想和你一起尝遍各种美食，走遍世界的角落。</p>
-            <p>只要有你在身边，去哪里都好。</p>
+            <p>还记得我们一起去挑金戒指金镯子吗？</p>
+            <p>给你戴上的时候，我的心跳漏了一拍，</p>
+            <p>那一刻我在心里发誓，这辈子都要好好疼你、护你、爱你。</p>
+            <p>往后余生，换我来为你遮风挡雨，好吗？</p>
           </div>
           <div class="page-number">4</div>
         </div>
       </div>
 
-      <!-- Page 6 -->
+      <!-- Page 6: 跨年与游戏 -->
       <div class="page" data-page="5">
+        <div class="page-bg" style="background-image: url('pic/5.jpeg');"></div>
+        
         <div class="page-inner">
+          <div class="page-title">人间烟火</div>
+          <div class="divider-heart">♡ ♡ ♡ ♡ ♡</div>
           <div class="page-body">
-            <p>有时我会想，缘分真是奇妙的事情。</p>
-            <p>在茫茫人海中，我们相遇、相识、相知。</p>
-            <p>没有早一步，也没有晚一步，刚好遇见了你。</p>
-            <p>这大概就是命运最好的安排。</p>
+            <p>新街口的每一家小吃店都留下了我们的足迹，</p>
+            <p>金粒门、好想来、奥乐齐、盒马、山姆、蜜雪冰城南京旗舰店……</p>
+            <p>我们一起逛遍一家又一家超市，就为了挑到最好吃的那一样。</p>
+            <p>这些细碎的小事，都是我最想和你重复一万遍的幸福。</p>
           </div>
-          <div class="divider-heart">♡ ♡</div>
           <div class="page-number">5</div>
         </div>
       </div>
 
-      <!-- Page 7 -->
+      <!-- Page 7: 未来告白 -->
       <div class="page" data-page="6">
+        <div class="page-bg" style="background-image: url('pic/6.jpeg');"></div>
+        
         <div class="page-inner">
+          <div class="page-title">我想和你走下去</div>
+          <div class="divider-heart">♡ ♡ ♡ ♡ ♡ ♡</div>
           <div class="page-body">
-            <p>谢谢你出现在我的生命里，</p>
-            <p>让我知道被爱是一件多么幸福的事情。</p>
-            <p>未来的路还很长，</p>
-            <p>但我愿意牵着你的手，一起走下去。</p>
+            <p>福福，一周年快乐。</p>
+            <p>谢谢你出现在我的生命里，填满了所有原本孤独的空白。</p>
+            <p>未来的每一年，我都想和你一起去看更大的世界，</p>
+            <p>一起吃更多好吃的，一起创造更多只属于我们的回忆。</p>
+            <p>我还想和你生个小福福，一起带着它去经历这个世界所有美好的风景。</p>
           </div>
-          <div class="page-sign">—— 永远爱你</div>
+          <div class="page-sign">—— 永远爱你的 Linltu</div>
           <div class="page-number">6</div>
         </div>
       </div>
@@ -633,10 +747,10 @@
         <div class="page-inner">
           <div style="font-size:clamp(44px,6vw,64px);margin-bottom:16px;">❤️</div>
           <div class="page-title" style="font-size:clamp(24px,3.5vw,36px);">I Love You</div>
-          <div class="divider-heart">♡ ♡ ♡ ♡ ♡</div>
+          <div class="divider-heart">♡ ♡ ♡ ♡ ♡ ♡ ♡ ♡</div>
           <div class="page-subtitle">三千世界，我只取你一瓢</div>
-          <div class="page-sign" style="margin-top:32px;font-size:clamp(13px,1.6vw,16px);color:rgba(120,80,100,0.35);">
-            — The End —
+          <div class="page-sign" style="margin-top:28px;font-size:clamp(15px,2vw,20px);color:#905068;">
+            愿我们的故事，永远未完待续……
           </div>
         </div>
       </div>
