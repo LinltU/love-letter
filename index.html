@@ -627,17 +627,17 @@
       }
 
       .page-bg {
-        background-size: auto 92%;
+        background-size: auto 100%;
         background-position: center top;
       }
 
       .page-inner {
-        padding: max(0px, env(safe-area-inset-top)) 14px 118px;
+        padding: max(0px, calc(env(safe-area-inset-top) - 12px)) 12px 126px;
       }
 
       .page-cover .page-inner {
         width: calc(100% - 20px);
-        padding: max(0px, env(safe-area-inset-top)) 16px 12px;
+        padding: max(0px, calc(env(safe-area-inset-top) - 12px)) 14px 12px;
       }
 
       .page-title {
