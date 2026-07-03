@@ -628,16 +628,16 @@
 
       .page-bg {
         background-size: auto 92%;
-        background-position: center 10%;
+        background-position: center top;
       }
 
       .page-inner {
-        padding: 10px 14px 114px;
+        padding: max(0px, env(safe-area-inset-top)) 14px 118px;
       }
 
       .page-cover .page-inner {
         width: calc(100% - 20px);
-        padding: 8px 16px;
+        padding: max(0px, env(safe-area-inset-top)) 16px 12px;
       }
 
       .page-title {
